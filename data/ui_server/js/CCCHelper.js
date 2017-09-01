@@ -63,10 +63,10 @@ function createCanvasImage(data, canvas) {
     cvPlot.height = rows;
     var ctx = cvPlot.getContext('2d');
     var imgdata = ctx.getImageData(0, 0, cols, rows);
-    var imgdatalen = imgdata.data.length;
+    var imgDataLen = imgdata.data.length;
     var imageCol = -1;
     var imageRow = 0;
-    for (var i = 0; i < imgdatalen; i += 4) {  //iterate over every pixel in the canvas
+    for (var i = 0; i < imgDataLen; i += 4) {  //iterate over every pixel in the canvas
         imageCol += 1;
         if (imageCol >= cols) {
             imageCol = 0;
@@ -93,11 +93,11 @@ function createCanvasMarker(data, canvas) {
     cvPlot.width = cols;
     cvPlot.height = rows;
     var ctx = cvPlot.getContext('2d');
-    var imgdata = ctx.getImageData(0, 0, cols, rows);
-    var imgdatalen = imgdata.data.length;
+    var imgData = ctx.getImageData(0, 0, cols, rows);
+    var imgDataLen = imgData.data.length;
     var imageCol = -1;
     var imageRow = 0;
-    for (var i = 0; i < imgdatalen; i += 4) {  //iterate over every pixel in the canvas
+    for (var i = 0; i < imgDataLen; i += 4) {  //iterate over every pixel in the canvas
         imageCol += 1;
         if (imageCol >= cols) {
             imageCol = 0;
@@ -112,12 +112,12 @@ function createCanvasMarker(data, canvas) {
             rgb = { r: 0, g: 0, b: 0 };
         }
 
-        imgdata.data[i + 0] = rgb.r;    // RED (0-255)
-        imgdata.data[i + 1] = rgb.g;    // GREEN (0-255)
-        imgdata.data[i + 2] = rgb.b;    // BLUE (0-255)
-        imgdata.data[i + 3] = 255;  // APLHA (0-255)
+        imgData.data[i + 0] = rgb.r;    // RED (0-255)
+        imgData.data[i + 1] = rgb.g;    // GREEN (0-255)
+        imgData.data[i + 2] = rgb.b;    // BLUE (0-255)
+        imgData.data[i + 3] = 255;  // APLHA (0-255)
     }
-    ctx.putImageData(imgdata, 0, 0);
+    ctx.putImageData(imgData, 0, 0);
 }
 
 function getMarkerData(canvasId) {
@@ -127,8 +127,8 @@ function getMarkerData(canvasId) {
     var cols = cvPlot.width;
 
     var ctx = cvPlot.getContext('2d');
-    var imgdata = ctx.getImageData(0, 0, cols, rows);
-    var imgdatalen = imgdata.data.length;
+    var imgData = ctx.getImageData(0, 0, cols, rows);
+    var imgDataLen = imgData.data.length;
     var imageCol = -1;
     var imageRow = 0;
 
@@ -142,22 +142,26 @@ function getMarkerData(canvasId) {
         background[i] = new Array(cols);
     }
 
-    for (var i = 0; i < imgdatalen; i += 4) {  //iterate over every pixel in the canvas
+    for (var i = 0; i < imgDataLen; i += 4) {  //iterate over every pixel in the canvas
         imageCol += 1;
         if (imageCol >= cols) {
             imageCol = 0;
             imageRow += 1;
         }
-        var r = imgdata.data[i + 0];
-        var g = imgdata.data[i + 1];
-        var b = imgdata.data[i + 2];
-        var a = imgdata.data[i + 3];
+        var r = imgData.data[i + 0];
+        var g = imgData.data[i + 1];
+        var b = imgData.data[i + 2];
+        var a = imgData.data[i + 3];
         var pixelRgbA = r + "," + g + "," + b;
         
         if (pixelRgbA === "255,0,0") {
             blob[imageRow][imageCol] = true;
             background[imageRow][imageCol] = false;
-        } else if (pixelRgbA === "0,0,0") {
+        } else if (pixelRgbA === "128,128,128") {
+            blob[imageRow][imageCol] = false;
+            background[imageRow][imageCol] = false;
+        }
+        else {
             blob[imageRow][imageCol] = false;
             background[imageRow][imageCol] = true;
         };
@@ -184,7 +188,8 @@ function hexToRgb(hex) {
 function getLinearMapping(data) {
 
     var colorScheme = ["white", "grey", "black"];
-    var intensityMin = data.blobMin;
+    //todo: why blobMin and not ImageMin?
+    var intensityMin = data.imageMin;
     var intensityMax = data.imageMax;
     var intensityMean = (intensityMax + intensityMin) / 2;
 

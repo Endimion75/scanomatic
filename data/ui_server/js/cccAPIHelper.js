@@ -1,5 +1,5 @@
-﻿//var baseUrl = "http://localhost:5000";
-var baseUrl = "";
+﻿var baseUrl = "http://localhost:5000";
+//var baseUrl = "";
 var GetSliceImagePath = baseUrl + "/api/calibration/#0#/image/#1#/slice/get/#2#";
 var InitiateCCCPath = baseUrl + "/api/calibration/initiate_new";
 var GetFixtruesPath = baseUrl + "/api/data/fixture/names";
@@ -28,7 +28,6 @@ function GetSliceImage(cccId, imageId, slice, successCallback, errorCallback) {
 
     $.get(path, successCallback).fail(errorCallback);
 }
-
 
 function GetFixtures(callback) {
     var path = GetFixtruesPath;

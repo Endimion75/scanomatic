@@ -1,0 +1,146 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Cell Count Calibration</title>
+    <meta charset="utf-8" />
+    <script src="js/jquery-2.2.3.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <script src="js/d3.js"></script>
+    <script src="js/cccAPIHelper.js"></script>
+    <script src="js/CCCHelper.js"></script>
+    <script src="js/ccc_DrawColony.js"></script>
+    <script src="colonyData.js"></script>
+    <script src="js/cccCanvasColonyMarker.js"></script>
+
+    <link href="style/ccc.css" rel="stylesheet" />
+    <link href="style/bootstrap.css" rel="stylesheet" />
+    <link href="style/main.css" rel="stylesheet" />
+    <link href="style/jquery-ui.css" rel="stylesheet" />
+</head>
+<body>
+    <script>
+        $(document)
+            .ready(function () {
+                //var dispatch = d3.dispatch("setCol", "reDrawCol");
+                //var row;
+                //var col;
+
+                //function markPixel(type) {
+                //    dispatch.reDrawCol("id" + row + "_" + col, type);
+                //};
+
+                //function getChar(event) {
+                //    if (event.which == null) {
+                //        return String.fromCharCode(event.keyCode); // IE
+                //    } else if (event.which != 0 && event.charCode != 0) {
+                //        return String.fromCharCode(event.which); // the rest
+                //    } else {
+                //        return null; // special key
+                //    }
+                //}
+
+                //$("#btnChange").click(function () {
+                //    dispatch.reDrawCol("id" + row + "_" + col, colonyMetaDataType.Background);
+                //});
+                //$(document).keypress(function (event) {
+                //    var char = getChar(event).toLowerCase();
+                //    switch (char) {
+                //        case 'q':
+                //            markPixel(colonyMetaDataType.Blob);
+                //            break;
+                //        case 'w':
+                //            markPixel(colonyMetaDataType.Background);
+                //            break;
+                //        case 'e':
+                //            markPixel(colonyMetaDataType.Image);
+                //            break;
+                //    }
+                //});
+                //var colony = DrawColony("#plot", colony4, dispatch);
+                //colony.on("SelectedPixel", function (datah) {
+                //    var arr = datah.coord.split(",");
+                //    row = arr[0];
+                //    col = arr[1];
+                //});
+                
+
+                var canvasBg = document.getElementById("cvPlot");
+                var canvasFg = document.getElementById("cvMark");
+                var canvasMd = document.getElementById("cvFinal");
+                
+
+                createCanvasMarker(colony4, canvasMd);
+                createCanvasImage(colony4, canvasBg);
+
+                canvasFg.width = canvasBg.width;
+                canvasFg.height = canvasBg.height;
+
+                var s = new CanvasState(document.getElementById('cvMark'));
+                s.addShape(new Blob(canvasBg.width / 2, canvasBg.height/2, 15, "rgba(255, 0, 0, .2)")); // The default is gray rgba(127, 255, 212, .5)
+
+                
+                $("#sizeMinus").click(function () {
+                    var blob = s.shapes[0];
+                    blob.r -= 5;
+                    s.valid = false;
+                });
+
+                $("#sizePlus").click(function () {
+                    var blob = s.shapes[0];
+                    blob.r += 5;
+                    s.valid = false;
+                });
+
+                $("#done").click(function () {
+                    var x = getMarkerData("cvMark");
+                    colony4.blob = x.blob;
+                    colony4.background = x.background;
+                    createCanvasMarker(colony4, canvasMd);
+
+                });
+
+                $("#del").click(function() {
+                    s.removeSelectedShape();
+                });
+
+
+            });
+    </script>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <button class="btn btn-default" id="btnChange">mark</button>
+                <button class="btn btn-default" id="sizePlus">+</button>
+                <button class="btn btn-default" id="sizeMinus">-</button>
+                <button class="btn btn-default" id="done">Done</button>
+                <button class="btn btn-default" id="del">delete</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div id="plot"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6" >
+                <canvas id="cvPlot" style="z-index: 1;position:absolute;left:0px;top:0px;"></canvas>
+                <canvas id="cvMark" style="z-index: 2;position:absolute;left:0px;top:0px;"></canvas>
+            </div>
+            <div class="col-md-6">
+                <canvas id="cvFinal"></canvas>
+                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                
+            </div>
+        </div>
+       
+
+    </div>
+</body>
+
+</html>

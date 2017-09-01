@@ -28,7 +28,7 @@
             var selPinFormatsName = "selPinFormats";
             var dialogCCCIni;
             var form;
-            var metaDataCanvasState;
+            var metaDataCanvasState = null;
             var species = $("#inSpecies");
             var reference = $("#inReference");
             var allFields = $([]).add(species).add(reference);
@@ -49,8 +49,7 @@
                 }
             });
 
-            form = dialogCCCIni.find("form").on("submit",
-                function(event) {
+            form = dialogCCCIni.find("form").on("submit", function(event) {
                     event.preventDefault();
                     initiateNewCcc();
                 });
@@ -60,7 +59,6 @@
             $("#btnUploadGridding").click(startGridding);
             $("#btnProcessNewImage").click(initiateProcessImageWizard);
             $("#inImageUpload").change(uploadImage);
-           
            
             ini();
 
@@ -367,7 +365,9 @@
                     $("#btnSetUpdatedColonyMetadata").hide();
                     $("#btnColonyBlobSizePlus").hide();
                     $("#btnColonyBlobSizeMinus").hide();
+                    $("#btnDeleteSelectedShape").hide();
                     $("#btnNextColonyDetect").show();
+                    $("#btnSkipColonyDetect").show();
                     break;
                 case 3.2:
                     //setColonyUpdateMetaDataButtonsState update
@@ -375,7 +375,9 @@
                     $("#btnSetUpdatedColonyMetadata").show();
                     $("#btnColonyBlobSizePlus").show();
                     $("#btnColonyBlobSizeMinus").show();
+                    $("#btnDeleteSelectedShape").show();
                     $("#btnNextColonyDetect").hide();
+                    $("#btnSkipColonyDetect").hide();
                     break;
                 default:
                 }
@@ -512,13 +514,7 @@
 
             function doSetGrayScaleTransformTask(scope, plateId, next) {
                 setGrayScaleTransform(scope, plateId, next);
-                //test(plateId, next);
             }
-
-            //function test(plateId, next) {
-            //    alert("plate: " + plateId);
-            //    next();
-            //}
 
             function setGrayScaleTransform(scope, plate, next) {
                 setStep(2);
@@ -535,12 +531,14 @@
                 if (data.success) {
                     setStep(2.1);
                     $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
-                    //SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [0, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
-                    SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [4, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
+                    SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [0, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
+                    //This makes the developing faster when using teh calibration test image
+                    //SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [4, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
                 } else
                     alert("set grayscale transform error:" + data.reason);
             }
 
+            //functions to use if you want a grid rather than circles on the plate display
             function drawCanvasGridCentersReGrid(scope, ctx) {
                 var first = true;
                 var size = 20;
@@ -560,6 +558,25 @@
                             ctx.fill();
                             first = false;
                         }
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            function drawCanvasGrid(scope, ctx) {
+                var totalRows = scope.gridding.xy1.length;
+                var totalCols = scope.gridding.xy1[0].length;
+                for (var row = 0; row < totalRows; row++) {
+                    for (var col = 0; col < totalCols; col++) {
+                        var p1 = scope.gridding.xy1[row][col];
+                        var p2 = scope.gridding.xy2[row][col];
+                        var x1 = p1[1];
+                        var y1 = p1[0];
+                        var x2 = p2[1];
+                        var y2 = p2[0];
+                        var w = x2 - x1;
+                        var h = y2 - y1;
+                        ctx.rect(x1, y1, w, h);
                         ctx.stroke();
                     }
                 }
@@ -611,25 +628,6 @@
                 }
             }
 
-            function drawCanvasGrid(scope, ctx) {
-                var totalRows = scope.gridding.xy1.length;
-                var totalCols = scope.gridding.xy1[0].length;
-                for (var row = 0; row < totalRows; row++) {
-                    for (var col = 0; col < totalCols; col++) {
-                        var p1 = scope.gridding.xy1[row][col];
-                        var p2 = scope.gridding.xy2[row][col];
-                        var x1 = p1[1];
-                        var y1 = p1[0];
-                        var x2 = p2[1];
-                        var y2 = p2[0];
-                        var w = x2 - x1;
-                        var h = y2 - y1;
-                        ctx.rect(x1, y1, w, h);
-                        ctx.stroke();
-                    }
-                }
-            }
-
             function renderGridFail(data, scope) {
                 var gridding = {
                     grid: data.grid
@@ -652,7 +650,6 @@
                         offset.push(offsetRow);
                         offset.push(offsetCol);
                         $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
-                        //SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [4, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
                         SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, offset, scope.AccessToken, setGriddingSuccess, setGriddingError);
                     });
                 }
@@ -737,23 +734,12 @@
                 }
             }
 
-            function doDetectColonyTask(scope, row, col, next) {
-                scope.PlateColonyNextTaskInQueue = next;
-                detectColony(scope, row, col);
-            }
-
             function detectColony(scope, row, col) {
                 scope.PlateCurrentColonyRow = row;
                 scope.PlateCurrentColonyCol = col;
                 SetColonyDetection(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken, row, col, setColonyDetectionSuccess, setColonyDetectionError);
             }
             
-            function createDetectColonyTask(scope, row, col) {
-                return function (next) {
-                    doDetectColonyTask(scope, row, col, next);
-                }
-            }
-
             function moveProgress(row, col, totalRow, totalCol) {
                 var m = (row * totalCol) + col;
                 var percent = (m * 100) / (totalCol * totalRow);
@@ -792,8 +778,6 @@
                     canvasFg.height = canvasBg.height;
 
                     setCurrentScope(scope);
-                    //runNextPlateColonyTask(scope);
-                    
                 } else {
                     alert("no success");
                 }
@@ -802,8 +786,10 @@
             $("#btnFixColonyMetadata").click(function () {
                 var canvasBg = document.getElementById("colonyImageCanvas");
                 var canvasFg = document.getElementById("colonyMarkingsCanvas");
-                metaDataCanvasState = new CanvasState(canvasFg);
 
+                if (metaDataCanvasState == null)
+                    metaDataCanvasState = new CanvasState(canvasFg);
+                
                 setStep(3.2);
                 metaDataCanvasState.addShape(new Blob(canvasBg.width / 2, canvasBg.height / 2, 15, "rgba(255, 0, 0, .2)"));
             });
@@ -837,10 +823,7 @@
 
                 createCanvasMarker(scope.PlateCurrentColony, canvasMarkings);
                 setStep(3.1);
-                metaDataCanvasState.shapes = [];
-                metaDataCanvasState.valid = false;
-                metaDataCanvasState = null;
-
+                metaDataCanvasState.reset();
                 setCurrentScope(scope);
             });
             $("#btnColonyBlobSizePlus").click(function () {
@@ -853,9 +836,16 @@
                 blob.r -= 5;
                 metaDataCanvasState.valid = false;
             });
+            $("#btnDeleteSelectedShape").click(function() {
+                metaDataCanvasState.removeSelectedShape();
+            });
             $("#btnNextColonyDetect").click(function () {
                 var scope = getCurrentScope();
                 SetColonyCompressionV2(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken, scope.PlateCurrentColony, scope.PlateCurrentColonyRow, scope.PlateCurrentColonyCol, setColonyCompressionSuccess, setColonyCompressionError);
+            });
+            $("#btnSkipColonyDetect").click(function () {
+                var scope = getCurrentScope();
+                nextColonyDetection(scope);
             });
 
             function setColonyDetectionError(data) {
@@ -868,44 +858,6 @@
 
             function setColonyCompressionError(data) {
                 alert("set Colony compression Error:" + data.reason);
-            }
-
-            function reportColonyDetectionProgress(data, scope) {
-                var success = data.success;
-                var reason = data.reason;
-                if (typeof reason == 'undefined')
-                    reason = '';
-                var item = success + "- " + reason;
-                scope.ColonyDetection.push(item);
-                if (success)
-                    scope.ColonyDetected = scope.ColonyDetected + 1;
-                else
-                    scope.ColonyNotDetected = scope.ColonyNotDetected + 1;
-                $("#divCompress").text("Detected:" + scope.ColonyDetected + " fails:" + scope.ColonyNotDetected + " last error:" + data.reason);
-            }
-
-            function reportColonyCompressionProgress(data) {
-                var success = data.success;
-                var reason = data.reason;
-                if (typeof reason == 'undefined')
-                    reason = '';
-                var item = success + "- " + reason;
-                scope.ColonyCompression.push(item);
-                if (success)
-                    scope.ColonyCompressed = scope.ColonyCompressed + 1;
-                else
-                    scope.ColonyNotCompressed = scope.ColonyNotCompressed + 1;
-                $("#divCompress").text("compressed:" + scope.ColonyCompressed + " fails:" + scope.ColonyNotCompressed + " last error:" + data.reason);
-            }
-
-            function runNextPlateColonyTask(scope) {
-                var next = scope.PlateColonyNextTaskInQueue;
-                if (next == null) {
-                    alert("the end");
-                }
-                setTimeout(function () {
-                    next();
-                }, 500);
             }
         });
 </script>
@@ -1066,6 +1018,7 @@
                                                 <div>
                                                     <button class="btn btn-default" id="btnColonyBlobSizePlus" style="horiz-align: center">+</button>
                                                     <button class="btn btn-default" id="btnColonyBlobSizeMinus" style="horiz-align: center">-</button>
+                                                    <button class="btn btn-default" id="btnDeleteSelectedShape" style="horiz-align: center">Delete</button>
                                                     <button class="btn btn-default" id="btnSetUpdatedColonyMetadata" style="horiz-align: center">Update</button>
                                                 </div>
                                             </div>
@@ -1090,7 +1043,7 @@
                                                     </li>
                                                     <li>
                                                         <div class="input-color">
-                                                            <input type="text" value="Either" />
+                                                            <input type="text" value="Excluded" />
                                                             <div class="color-box" style="background-color: black;"></div>
                                                         </div>
                                                     </li>
@@ -1101,7 +1054,8 @@
                                                 <br />
                                             </div>
                                             <div style="text-align: center">
-                                                <button class="btn btn-default" id="btnNextColonyDetect" style="margin-left: 30px">Set</button>
+                                                <button class="btn btn-default" id="btnNextColonyDetect" style="margin-left: 30px">Save Colony</button>
+                                                <button class="btn btn-default" id="btnSkipColonyDetect" style="margin-left: 30px">Skip Colony</button>
                                             </div>
                                         </div>
                                     </div>
